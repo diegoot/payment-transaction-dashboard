@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { DateOrder } from "./Dashboard";
+import { Order } from "./Dashboard";
 
 interface Transaction {
     id: number;
@@ -13,10 +13,11 @@ interface Transaction {
 interface TransactionListProps {
     dateFrom: string;
     dateTo: string;
-    dateOrder: DateOrder;
+    dateOrder: Order;
+    amountOrder: Order;
 }
 
-const TransactionList = ({ dateFrom, dateTo, dateOrder }: TransactionListProps) => {
+const TransactionList = ({ dateFrom, dateTo, dateOrder, amountOrder }: TransactionListProps) => {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string>("");
@@ -41,10 +42,15 @@ const TransactionList = ({ dateFrom, dateTo, dateOrder }: TransactionListProps) 
                 }
                 return true;
             });
-            if (dateOrder === DateOrder.ASC) {
+            if (dateOrder === Order.ASC) {
                 filteredTransactions.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-            } else if (dateOrder === DateOrder.DESC) {
+            } else if (dateOrder === Order.DESC) {
                 filteredTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+            }
+            if (amountOrder === Order.ASC) {
+                filteredTransactions.sort((a, b) => a.amount - b.amount);
+            } else if (amountOrder === Order.DESC) {
+                filteredTransactions.sort((a, b) => b.amount - a.amount);
             }
             setTransactions(filteredTransactions);
             setLoading(false);
@@ -52,7 +58,7 @@ const TransactionList = ({ dateFrom, dateTo, dateOrder }: TransactionListProps) 
             setLoading(false);
             setError(e.message);
         });
-    }, [dateFrom, dateTo, dateOrder]);
+    }, [dateFrom, dateTo, dateOrder, amountOrder]);
 
     if (loading) {
         return (
