@@ -58,6 +58,7 @@ const TransactionList = ({ dateFrom, dateTo, dateOrder, amountOrder }: Transacti
             setTotalAmount(totalAmount);
             setTransactions(filteredTransactions);
             setLoading(false);
+            setError("");
         }).catch((e) => {
             setLoading(false);
             setError(e.message);
@@ -76,7 +77,7 @@ const TransactionList = ({ dateFrom, dateTo, dateOrder, amountOrder }: Transacti
         return (
             <div className="text-center py-8 text-gray-500">
                 No transactions to show
-                <Error title="Failed to load transactions" detail={error} />
+                {error && <Error title="Failed to load transactions" detail={error} />}
             </div>
         );
     }
