@@ -21,6 +21,7 @@ const TransactionList = ({ dateFrom, dateTo, dateOrder, amountOrder }: Transacti
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string>("");
+    const [totalAmount, setTotalAmount] = useState<number>(0);
 
     useEffect(() => {
         const getTransactions = async (): Promise<Transaction[]> => {
@@ -52,6 +53,8 @@ const TransactionList = ({ dateFrom, dateTo, dateOrder, amountOrder }: Transacti
             } else if (amountOrder === Order.DESC) {
                 filteredTransactions.sort((a, b) => b.amount - a.amount);
             }
+            const totalAmount = filteredTransactions.reduce((sum, t) => sum + t.amount, 0);
+            setTotalAmount(totalAmount);
             setTransactions(filteredTransactions);
             setLoading(false);
         }).catch((e) => {
@@ -105,7 +108,7 @@ const TransactionList = ({ dateFrom, dateTo, dateOrder, amountOrder }: Transacti
     return (
         <div className="p-4">
             {/* Desktop Table */}
-            <div className="hidden md:block overflow-x-auto shadow-md rounded-lg">
+            <div className="hidden md:block overflow-x-auto shadow-md rounded-lg relative group">
                 <table className="min-w-full bg-white">
                     <thead className="bg-gray-200">
                         <tr>
@@ -164,6 +167,18 @@ const TransactionList = ({ dateFrom, dateTo, dateOrder, amountOrder }: Transacti
                         </div>
                     </div>
                 ))}
+            </div>
+
+            {/* Summary */}
+            <div className="w-full mt-4">
+                <div className="flex flex-row justify-between items-center bg-gray-100 rounded px-4 py-2">
+                    <span className="text-sm font-bold text-gray-800">
+                        Total Transactions: {transactions.length}
+                    </span>
+                    <span className="text-sm font-bold text-gray-800">
+                        Total Amount: ${totalAmount.toFixed(2)}
+                    </span>
+                </div>
             </div>
         </div>
     );
