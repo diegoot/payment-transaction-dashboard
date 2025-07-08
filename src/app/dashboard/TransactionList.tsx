@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { DateOrder } from "./Dashboard";
 
 interface Transaction {
     id: number;
@@ -9,8 +10,16 @@ interface Transaction {
     amount: number;
 }
 
-const TransactionList = () => {
+interface TransactionListProps {
+    dateFrom: string;
+    dateTo: string;
+    dateOrder: DateOrder;
+}
+
+const TransactionList = ({ dateFrom, dateTo, dateOrder }: TransactionListProps) => {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
+    const [loading, setLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string>("");
 
     useEffect(() => {
         const getTransactions = async (): Promise<Transaction[]> => {
@@ -18,8 +27,66 @@ const TransactionList = () => {
             const data = await response.json();
             return data as Transaction[];
         }
-        getTransactions().then(transactions => setTransactions(transactions));
-    }, []);
+        setLoading(true);
+        getTransactions().then(transactions => {
+            const filteredTransactions = transactions.filter(transaction => {
+                const transactionDate = new Date(transaction.date);
+                if (dateFrom && dateTo) {
+                    console.log("1", transactionDate, "2", new Date(dateFrom), "3", new Date(dateTo))
+                    return transactionDate >= new Date(dateFrom) && transactionDate <= new Date(dateTo);
+                } else if (dateFrom) {
+                    return transactionDate >= new Date(dateFrom);
+                } else if (dateTo) {
+                    return transactionDate <= new Date(dateTo);
+                }
+                return true;
+            });
+            if (dateOrder === DateOrder.ASC) {
+                filteredTransactions.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+            } else if (dateOrder === DateOrder.DESC) {
+                filteredTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+            }
+            setTransactions(filteredTransactions);
+            setLoading(false);
+        }).catch((e) => {
+            setLoading(false);
+            setError(e.message);
+        });
+    }, [dateFrom, dateTo, dateOrder]);
+
+    if (loading) {
+        return (
+            <div className="text-center py-8 text-gray-500">
+                Loading transactions...
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="p-4">
+                <div className="max-w-md mx-auto">
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-6 shadow-sm">
+                        <div className="flex items-center">
+                            <div className="flex-shrink-0">
+                                <svg className="h-6 w-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                </svg>
+                            </div>
+                            <div className="ml-3">
+                                <h3 className="text-lg font-medium text-red-800">
+                                    Failed to load transactions
+                                </h3>
+                                <p className="mt-1 text-sm text-red-700">
+                                    {error}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     if (transactions.length === 0) {
         return (
