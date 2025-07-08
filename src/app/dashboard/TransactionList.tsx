@@ -114,7 +114,7 @@ const TransactionList = ({ dateFrom, dateTo, dateOrder, amountOrder }: Transacti
                                     {transaction.id}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    {new Date(transaction.date).toLocaleDateString()}
+                                    {new Date(transaction.date).toLocaleDateString('en-US', { timeZone: 'UTC',   year: 'numeric', month: 'long', day: 'numeric' })}
                                 </td>
                                 <td className="px-6 py-4 text-sm text-gray-900">
                                     {transaction.description}
@@ -141,7 +141,7 @@ const TransactionList = ({ dateFrom, dateTo, dateOrder, amountOrder }: Transacti
                             </span>
                         </div>
                         <div className="text-sm text-gray-500 mb-2">
-                            {new Date(transaction.date).toLocaleDateString()}
+                            {new Date(transaction.date).toLocaleDateString('en-US', { timeZone: 'UTC',   year: 'numeric', month: 'long', day: 'numeric' })}
                         </div>
                         <div className="text-sm text-gray-900">
                             {transaction.description}
