@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Order } from "./Dashboard";
 import Error from "../components/Error";
 
@@ -19,10 +19,9 @@ interface TransactionListProps {
 }
 
 const TransactionList = ({ dateFrom, dateTo, dateOrder, amountOrder }: TransactionListProps) => {
-    const [transactions, setTransactions] = useState<Transaction[]>([]);
+    const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string>("");
-    const [totalAmount, setTotalAmount] = useState<number>(0);
 
     useEffect(() => {
         const getTransactions = async (): Promise<Transaction[]> => {
@@ -32,38 +31,43 @@ const TransactionList = ({ dateFrom, dateTo, dateOrder, amountOrder }: Transacti
         }
         setLoading(true);
         getTransactions().then(transactions => {
-            const filteredTransactions = transactions.filter(transaction => {
-                const transactionDate = new Date(transaction.date);
-                if (dateFrom && dateTo) {
-                    console.log("1", transactionDate, "2", new Date(dateFrom), "3", new Date(dateTo))
-                    return transactionDate >= new Date(dateFrom) && transactionDate <= new Date(dateTo);
-                } else if (dateFrom) {
-                    return transactionDate >= new Date(dateFrom);
-                } else if (dateTo) {
-                    return transactionDate <= new Date(dateTo);
-                }
-                return true;
-            });
-            if (dateOrder === Order.ASC) {
-                filteredTransactions.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-            } else if (dateOrder === Order.DESC) {
-                filteredTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-            }
-            if (amountOrder === Order.ASC) {
-                filteredTransactions.sort((a, b) => a.amount - b.amount);
-            } else if (amountOrder === Order.DESC) {
-                filteredTransactions.sort((a, b) => b.amount - a.amount);
-            }
-            const totalAmount = filteredTransactions.reduce((sum, t) => sum + t.amount, 0);
-            setTotalAmount(totalAmount);
-            setTransactions(filteredTransactions);
+            setAllTransactions(transactions);
             setLoading(false);
-            setError("");
         }).catch((e) => {
             setLoading(false);
             setError(e.message);
         });
-    }, [dateFrom, dateTo, dateOrder, amountOrder]);
+    }, []);
+
+    // Derive filtered and sorted transactions and totalAmount
+    const filteredTransactions = useMemo(() => {
+        let filtered = allTransactions.filter(transaction => {
+            const transactionDate = new Date(transaction.date);
+            if (dateFrom && dateTo) {
+                return transactionDate >= new Date(dateFrom) && transactionDate <= new Date(dateTo);
+            } else if (dateFrom) {
+                return transactionDate >= new Date(dateFrom);
+            } else if (dateTo) {
+                return transactionDate <= new Date(dateTo);
+            }
+            return true;
+        });
+        if (dateOrder === Order.ASC) {
+            filtered = [...filtered].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        } else if (dateOrder === Order.DESC) {
+            filtered = [...filtered].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        }
+        if (amountOrder === Order.ASC) {
+            filtered = [...filtered].sort((a, b) => a.amount - b.amount);
+        } else if (amountOrder === Order.DESC) {
+            filtered = [...filtered].sort((a, b) => b.amount - a.amount);
+        }
+        return filtered;
+    }, [allTransactions, dateFrom, dateTo, dateOrder, amountOrder]);
+
+    const totalAmount = useMemo(() => {
+        return filteredTransactions.reduce((sum, t) => sum + t.amount, 0);
+    }, [filteredTransactions]);
 
     if (loading) {
         return (
@@ -73,7 +77,7 @@ const TransactionList = ({ dateFrom, dateTo, dateOrder, amountOrder }: Transacti
         );
     }
 
-    if (transactions.length === 0) {
+    if (filteredTransactions.length === 0) {
         return (
             <div className="text-center py-8 text-gray-500">
                 No transactions to show
@@ -104,7 +108,7 @@ const TransactionList = ({ dateFrom, dateTo, dateOrder, amountOrder }: Transacti
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {transactions.map((transaction) => (
+                        {filteredTransactions.map((transaction) => (
                             <tr key={transaction.id} className="hover:bg-gray-50">
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                     {transaction.id}
@@ -128,7 +132,7 @@ const TransactionList = ({ dateFrom, dateTo, dateOrder, amountOrder }: Transacti
 
             {/* Mobile Cards */}
             <div className="md:hidden space-y-3">
-                {transactions.map((transaction) => (
+                {filteredTransactions.map((transaction) => (
                     <div key={transaction.id} className="bg-white rounded-lg shadow-md p-4 border border-gray-200">
                         <div className="flex justify-between items-start mb-2">
                             <span className="text-sm font-medium text-gray-900">ID: {transaction.id}</span>
@@ -150,7 +154,7 @@ const TransactionList = ({ dateFrom, dateTo, dateOrder, amountOrder }: Transacti
             <div className="w-full mt-4">
                 <div className="flex flex-row justify-between items-center bg-gray-100 rounded px-4 py-2">
                     <span className="text-sm font-bold text-gray-800">
-                        Total Transactions: {transactions.length}
+                        Total Transactions: {filteredTransactions.length}
                     </span>
                     <span className="text-sm font-bold text-gray-800">
                         Total Amount: ${totalAmount.toFixed(2)}
